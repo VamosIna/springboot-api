@@ -2,73 +2,63 @@ package com.jalin.jalinappbackend.configuration;
 
 import com.jalin.jalinappbackend.module.authentication.entity.RoleEnum;
 import com.jalin.jalinappbackend.module.authentication.jwt.JwtFilter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
 
-import java.util.List;
+import static org.springframework.security.config.Customizer.withDefaults;
+
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
-    @Autowired
-    private JwtFilter jwtFilter;
-    @Autowired
-    private UserDetailsService userDetailsService;
+public class SecurityConfiguration {
+    private final JwtFilter jwtFilter;
+    private final UserDetailsService userDetailsService;
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http
-                .cors(c -> {
-                    CorsConfigurationSource source = request -> {
-                        CorsConfiguration config = new CorsConfiguration();
-                        config.setAllowedOrigins(List.of("*"));
-                        config.setAllowedMethods(List.of("*"));
-                        config.setAllowedHeaders(List.of("*"));
-                        config.setExposedHeaders(List.of("*"));
-                        return config;
-                    };
-                    c.configurationSource(source);
-                })
-                .csrf().disable();
-
-        http = http
-                .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and();
-
-        http = http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-
-        http
-                .authorizeRequests()
-                .mvcMatchers("/api/register", "/api/login", "/api/admin/login").permitAll()
-                .mvcMatchers("/register", "/login", "/admin/login").permitAll()
-                .antMatchers("/api/admin/v1/**").hasRole(RoleEnum.ADMIN.name())
-                .antMatchers("/admin/v1/**").hasRole(RoleEnum.ADMIN.name())
-                .antMatchers("/api/v1/**").hasRole(RoleEnum.USER.name())
-                .antMatchers("/v1/**").hasRole(RoleEnum.USER.name())
-                .and()
-                .authorizeRequests()
-                .anyRequest().authenticated();
+    public SecurityConfiguration(JwtFilter jwtFilter, UserDetailsService userDetailsService) {
+        this.jwtFilter = jwtFilter;
+        this.userDetailsService = userDetailsService;
     }
 
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) {
-        auth.authenticationProvider(daoAuthenticationProvider());
-    }
+//    protected void configure(HttpSecurity http) throws Exception {
+//        http
+//                .cors()
+//                .and()
+//                .csrf(customizer -> customizer.disable())
+//                .disable()
+//                .sessionManagement()
+//                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+//                .and()
+//                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+//                .authorizeRequests()
+//                .mvcMatchers("/api/register", "/api/login", "/api/admin/login").permitAll()
+//                .mvcMatchers("/register", "/login", "/admin/login").permitAll()
+//                .mvcMatchers("/api/admin/v1/**").hasRole(RoleEnum.ADMIN.name())
+//                .mvcMatchers("/admin/v1/**").hasRole(RoleEnum.ADMIN.name())
+//                .mvcMatchers("/api/v1/**").hasRole(RoleEnum.USER.name())
+//                .mvcMatchers("/v1/**").hasRole(RoleEnum.USER.name())
+//                .anyRequest().authenticated();
+//    }
+@Bean
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http
+            .authorizeHttpRequests((authorize) -> authorize
+                    .anyRequest().authenticated()
+            )
+            .httpBasic(withDefaults());
+    return http.build();
+}
 
     @Bean
     public DaoAuthenticationProvider daoAuthenticationProvider() {
@@ -84,8 +74,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    @Override
-    protected AuthenticationManager authenticationManager() throws Exception {
-        return super.authenticationManager();
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
     }
 }

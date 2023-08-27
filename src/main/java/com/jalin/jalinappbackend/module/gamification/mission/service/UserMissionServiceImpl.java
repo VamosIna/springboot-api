@@ -142,7 +142,7 @@ public class UserMissionServiceImpl implements UserMissionService {
             if (userMission.getActivity().equals(transaction.getTransactionName())) {
                 double transactionAmount = transaction.getAmount().doubleValue();
                 double userMissionMinAmount = userMission.getMinimumAmount().doubleValue();
-                UserMission updateUserMission = userMissionRepository.getById(userMission.getId());
+                UserMission updateUserMission = userMissionRepository.getReferenceById(userMission.getId());
                 if (transactionAmount >= userMissionMinAmount) {
                     updateUserMissionProgress(updateUserMission);
                 }

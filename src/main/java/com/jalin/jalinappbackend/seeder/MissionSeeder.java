@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
-import static java.rmi.server.LogStream.log;
+
 
 @Component
 @Order(value = 2)
@@ -29,7 +29,6 @@ public class MissionSeeder implements CommandLineRunner {
         try {
             seed();
         } catch (Exception exception) {
-            log(exception.getMessage());
         }
     }
 
